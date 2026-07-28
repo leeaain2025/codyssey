@@ -257,7 +257,7 @@ drwxr-xr-x@  3 leeaain  staff    96B Jul 28 12:45 ..
 -rwxrwxrwx@  1 leeaain  staff     0B Jul 28 22:15 empty.md
 ```
 
-# 4. Docker 설치 및 기본 점
+# 4. Docker 설치 및 기본 점검
 ### Docker 버전 확인
 ```bash
 docker --version
@@ -379,7 +379,7 @@ Server:
  Firewall Backend: iptables
 ```
 
-## 5. Docker 기본 운영 명령 수행
+# 5. Docker 기본 운영 명령 수행
 ### 이미지: 다운로드/목록 확인
 ```bash
 docker images
@@ -457,8 +457,89 @@ CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT     MEM %     NET I/O      
 ```
 
 
-## 7. 기존 Dockerfile 기반 커스텀 이미지 제작
+# 6. 컨테이너 실행 실습
+### hello-world 실행
+```bash
+docker run --name hello-test hello-world
+```
+##### <결과>
+```bash
+Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+58dee6a49ef1: Pull complete 
+c3bdf82c34d1: Download complete 
+Digest: sha256:c3cbe1cc1aa588a64951ac6286e0df7b27fe2e6324b1001c619bb358770c0178
+Status: Downloaded newer image for hello-world:latest
 
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+    (arm64v8)
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
+
+To try something more ambitious, you can run an Ubuntu container with:
+ $ docker run -it ubuntu bash
+
+Share images, automate workflows, and more with a free Docker ID:
+ https://hub.docker.com/
+
+For more examples and ideas, visit:
+ https://docs.docker.com/get-started/
+```
+
+
+### ubuntu 컨테이너 실행 후 내부에서 간단한 명령 실행
+```bash
+docker run -dit --name ubuntu-test ubuntu:24.04 /bin/bash
+docker exec -it ubuntu-test /bin/bash
+```
+##### <결과>
+```bash
+root@c839b3b76ff6:/# pwd
+/
+root@c839b3b76ff6:/# ls -al
+total 56
+drwxr-xr-x   1 root root 4096 Jul 28 20:37 .
+drwxr-xr-x   1 root root 4096 Jul 28 20:37 ..
+-rwxr-xr-x   1 root root    0 Jul 28 20:37 .dockerenv
+lrwxrwxrwx   1 root root    7 Apr 22  2024 bin -> usr/bin
+drwxr-xr-x   2 root root 4096 Apr 22  2024 boot
+drwxr-xr-x   5 root root  360 Jul 28 20:37 dev
+drwxr-xr-x   1 root root 4096 Jul 28 20:37 etc
+drwxr-xr-x   3 root root 4096 Jun 10 02:16 home
+lrwxrwxrwx   1 root root    7 Apr 22  2024 lib -> usr/lib
+drwxr-xr-x   2 root root 4096 Jun 10 02:09 media
+drwxr-xr-x   2 root root 4096 Jun 10 02:09 mnt
+drwxr-xr-x   2 root root 4096 Jun 10 02:09 opt
+dr-xr-xr-x 230 root root    0 Jul 28 20:37 proc
+drwx------   2 root root 4096 Jun 10 02:16 root
+drwxr-xr-x   4 root root 4096 Jun 10 02:16 run
+lrwxrwxrwx   1 root root    8 Apr 22  2024 sbin -> usr/sbin
+drwxr-xr-x   2 root root 4096 Jun 10 02:09 srv
+dr-xr-xr-x  11 root root    0 Jul 28 20:37 sys
+drwxrwxrwt   2 root root 4096 Jun 10 02:16 tmp
+drwxr-xr-x  11 root root 4096 Jun 10 02:09 usr
+drwxr-xr-x  11 root root 4096 Jun 10 02:16 var
+```
+
+
+### 컨테이너 종료와 유지의 차이 설명
+- `docker exec`은 새로운 shell을 생성해서 컨테이너에 접속. 
+	`exit`를 통해 빠져나오면 해당 shell만 종료되고 기존 메인 프로세스는 유지된다.
+- `docker attach`는 새로운 shell을 만들지 않고 컨테이너의 기존 주 프로세스인 bash에 직접 연결한다. 
+	`exit`를 통해 빠져나오면 기존 메인 프로세스까지 함께 종료된다.
+```bash
+
+```
+
+
+# 7. 기존 Dockerfile 기반 커스텀 이미지 제작
 Dockerfile
 ```docker
 FROM nginx:alpine
@@ -496,12 +577,12 @@ Alpine Linux 위에 NGINX 웹 서버가 설치된 Docker 이미지.
 
 
 
-## 8. 포트 매핑 및 접속 증거
+# 8. 포트 매핑 및 접속 증거
 ![스크린샷]screenshot_00.png
 
 
 
-## 9. Docker 볼륨 영속성 검증
+# 9. Docker 볼륨 영속성 검증
 ### 1. 볼륨 생성
 ```bash
 docker volume create nginx-data
