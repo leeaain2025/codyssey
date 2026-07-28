@@ -246,16 +246,19 @@ drwxr-xr-x@  3 leeaain  staff    96B Jul 28 12:45 ..
 
 권한 변경 실행
 ```bash
-chmod 777 empty.md
+chmod 600 empty.md
 ```
 ##### <결과>
 ```bash
 ls -al
 
-drwxr-xr-x@  4 leeaain  staff   128B Jul 29 01:34 .
-drwxr-xr-x@  3 leeaain  staff    96B Jul 28 12:45 ..
--rwxrwxrwx@  1 leeaain  staff     0B Jul 28 22:15 empty.md
+-rw-------@ 1 leeaain  staff     0B Jul 29 01:54 README.md
 ```
+파일 소유자만 읽고 수정할 수 있으며, 나머지 사용자는 아무 권한도 없음.  
+실행파일에는 적합하지 않고 소유자 외에 공개하고 싶지 않은 파일에 적합한 설정.
+
+
+
 
 # 4. Docker 설치 및 기본 점검
 ### Docker 버전 확인
@@ -534,9 +537,9 @@ drwxr-xr-x  11 root root 4096 Jun 10 02:16 var
 	`exit`를 통해 빠져나오면 해당 shell만 종료되고 기존 메인 프로세스는 유지된다.
 - `docker attach`는 새로운 shell을 만들지 않고 컨테이너의 기존 주 프로세스인 bash에 직접 연결한다. 
 	`exit`를 통해 빠져나오면 기존 메인 프로세스까지 함께 종료된다.
-```bash
-
-```
+### 이미지와 컨테이너의 차이
+- 이미지: 설계도. 소스코드, 라이브러리, 설정 및 기본 실행 명령을 읽기 전용 레이어로 묶어놓은 불변 템플릿.
+- 컨테이너: 이미지를 기반으로 생성되고 실행되는 인스턴스.
 
 
 # 7. 기존 Dockerfile 기반 커스텀 이미지 제작
@@ -628,7 +631,10 @@ docker run -d --name alpine -p 8082:80 -v nginx-data:/usr/share/nginx/html alp
 
 
 ## 10. Git 설정 및 GitHub 연동
-- Git 사용자 정보/기본 브랜치 설정
+
+git 원격 repo 주소: https://github.com/leeaain2025/codyssey
+
+### Git 사용자 정보/기본 브랜치 설정
 ```bash
 git config --global user.name "leeaain2025"
 git config --global user.mail "leeaain2025@gmail.com"
@@ -639,6 +645,20 @@ git config --global init.defaultBranch main
 git config --list
 ```
 ![스크린샷]screenshot_06.png
+
+### git push 이력
+```bash
+git log --oneline origin/main
+```
+##### <결과>
+```bash
+061c923 (HEAD -> main, origin/main) modified README.md
+6a9278d modified README.md
+58b0006 modified README.md
+de56c11 complete README.md
+7260497 submit
+6c8b58d Initial commit
+```
 
 
 
