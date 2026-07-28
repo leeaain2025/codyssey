@@ -18,6 +18,16 @@
 [x] github
 
 ## 3. 검증 방법, 결과 위치 링크
+### 3.1 디렉토리 구조와 역할
+```text
+week_1/
+├── README.md              # 과제 수행 전체 기록 (터미널/권한/Docker/Compose/Git 로그, 트러블슈팅)
+├── screenshot_*.png       # 접속·볼륨 영속성·SSH 설정 등 증거 스크린샷
+│
+├── try1/                  # 메인 과제
+│
+└── try2/                   # 보너스 과제 (FastAPI + Compose 실습)
+```
 
 
 ## 4. 트러블슈팅
@@ -628,6 +638,55 @@ docker run -d --name alpine -p 8082:80 -v nginx-data:/usr/share/nginx/html alp
 
 새 컨테이너에서도 앞에서의 볼륨에 반영한 내용 동일하게 확인되는지 체크.  
 ![스크린샷]screenshot_06.png
+
+### 4. 볼륨 백업
+먼저 데이터 변경을 막기 위해 연결된 컨테이너를 중지
+```bash
+docker stop alpine
+```
+
+볼륨을 백업한다.  
+이 때 임시 Alpine 컨테이너를 이용하여 압축 파일로 백업한다.
+```bash
+docker run --rm \
+  -v nginx-data:/data \
+  -v "$(pwd):/backup" \
+  alpine \
+  tar czf /backup/nginx-data.tar.gz -C /data .
+```
+Docker volume은 독립적으로 명령어를 실행할 수 있는 프로그램이 아니라 단순한 저장 공간으로,  
+파일 목록 조회나 압축등의 기능이 없다.  
+그래서 볼륨을 임시 컨테이너에 연결하고 컨테이너 안의 `tar` 명령을 이용한다.  
+Alpine은 이미지 크기가 작고 `tar`같은 기본 도구가 포함되어 있어 임시 컨테이너로 사용하기에 적합하다. Ubuntu같은 이미지도 good.
+
+
+### 5. 볼륨 복원
+안전한 복원을 위해 새 볼륨을 생성한다.  
+기존 데이터를 건드리지 않고 백업 파일이 제대로 복원되는지 검증하기 위해서다.
+기존 볼륨에 바로 복원하면 기존 파일과 백업 파일이 섞이며 같은 이름의 파일이 덮어씌워지는 등 데이터가 망가질 위험이 있다.
+```bash
+docker volume create nginx-data-restored
+```
+
+기존에 백업해둔 내용으로부터 복원한다.
+```bash
+docker run --rm \
+  -v nginx-data-restored:/data \
+  -v "$(pwd):/backup" \
+  alpine \
+  tar xzf /backup/nginx-data.tar.gz -C /data
+```
+
+잘 복원됐는지 확인
+```bash
+docker run --rm \
+  -v nginx-data-restored:/data \
+  alpine \
+  ls -la /data
+```
+
+
+
 
 
 ## 10. Git 설정 및 GitHub 연동
