@@ -1,27 +1,26 @@
-# 1. 기술 문서
-## 1. 프로젝트 개요
+# 1. 프로젝트 개요
 터미널, Docker, GitHub의 기본 사용법을 익히고 그 과정을 기록한다.
 
-## 2. 실행환경
+## 1. 실행환경
 - Mac
 - zsh
 - Docker: 29.4.0
 - git: 2.50.1
 
-## 3. 수행 항목 체크리스트
-- 터미널
-- 권한
-- Docker
-- Dockerfile
-- port
-- volume
-- git
-- github
+## 2. 수행 항목 체크리스트
+[x] 터미널
+[x] 권한
+[x] Docker
+[x] Dockerfile
+[x] port
+[x] volume
+[x] git
+[x] github
 
-## 4. 검증 방법, 결과 위치 링크
+## 3. 검증 방법, 결과 위치 링크
 
 
-## 5. 트러블슈팅
+## 4. 트러블슈팅
 - 문제 1
   : docker run 중에 port가 이미 점유중이라는 메시지
 ```bash
@@ -122,6 +121,8 @@ CONTAINER ID   IMAGE      COMMAND                  CREATED         STATUS       
 baea1e5578e6   myserver   "uvicorn main:app --…"   7 seconds ago   Up 6 seconds   0.0.0.0:8080->8000/tcp, [::]:8080->8000/tcp   api
 ```
 PORTS도 잘 매핑된 채 서비스가 잘 시작된 것을 볼 수 있다.
+
+
 
 # 2. 터미널 조작 로그
 ### 현재 위치 확인
