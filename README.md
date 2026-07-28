@@ -21,7 +21,7 @@
 
 
 ## 4. 트러블슈팅
-- 문제 1
+### 문제 1
   : docker run 중에 port가 이미 점유중이라는 메시지
 ```bash
 docker run -d -p 8080:8000 --name api myserver
@@ -51,14 +51,14 @@ docker stop web
 
 docker ps -a
 ```
-<결과>
+##### <결과> 
 PORTS가 비어있는 것을 볼 수 있다.
 ```bash
 CONTAINER ID   IMAGE      COMMAND                  CREATED         STATUS                      PORTS     NAMES
 5d7eab0a3da2   myserver   "uvicorn main:app --…"   3 minutes ago   Created                               api
 ```
 ---
-- 문제2  
+### 문제2  
   : 위 문제를 해결하고 다시 docker run을 시도하는데 해당 이름의 컨테이너가 이미 만들어져있다는 에러 발생
 - 원인/가설  
   가설: 앞에서 실행했던 docker run이 port 문제로 컨테이너는 생성되었지만 실행은 안된 상태일 것이다.  
@@ -69,7 +69,7 @@ docker에 존재하는 모든 컨테이너 확인(실행 여부 관계없음)
 ```bash
 docker ps -a
 ```
-<결과>
+##### <결과>
 ```bash
 CONTAINER ID   IMAGE      COMMAND                  CREATED          STATUS                     PORTS     NAMES
 5d7eab0a3da2   myserver   "uvicorn main:app --…"   49 minutes ago   Created                              api
@@ -79,7 +79,7 @@ docker가 실행중인 컨테이너만 확인
 ```bash
 docker ps
 ```
-<결과>
+##### <결과>
 ```bash
 CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
 ```
@@ -91,7 +91,7 @@ docker start api
 
 docker ps -a
 ```
-<결과>
+##### <결과>
 ```bash
 CONTAINER ID   IMAGE      COMMAND                  CREATED          STATUS                      PORTS     NAMES
 5d7eab0a3da2   myserver   "uvicorn main:app --…"   52 minutes ago   Exited (3) 5 seconds ago              api
@@ -101,7 +101,7 @@ docker의 로그를 확인해본다.
 ```bash
 docker logs api
 ```
-<결과>
+##### <결과>
 ```bash
 ERROR:    Error loading ASGI app. Could not import module "main".
 ```
@@ -115,7 +115,7 @@ docker rm -f api
 docker run -d -p 8080:8000 --name api myserver
 docker ps
 ```
-<결과>
+##### <결과>
 ```bash
 CONTAINER ID   IMAGE      COMMAND                  CREATED         STATUS         PORTS                                         NAMES
 baea1e5578e6   myserver   "uvicorn main:app --…"   7 seconds ago   Up 6 seconds   0.0.0.0:8080->8000/tcp, [::]:8080->8000/tcp   api
@@ -129,7 +129,7 @@ PORTS도 잘 매핑된 채 서비스가 잘 시작된 것을 볼 수 있다.
 ```bash안
 pwd
 ```
-<결과>  
+##### <결과>  
 ```bash
 /Users/leeaain/codyssey/week_1
 ```
@@ -138,7 +138,7 @@ pwd
 ```bash
 ls -al
 ```
-<결과>
+##### <결과>
 ```bash
 total 8
 drwxr-xr-x@ 3 leeaain  staff   96 Jul 28 21:50 .
@@ -150,7 +150,7 @@ drwxr-xr-x@ 3 leeaain  staff   96 Jul 28 12:45 ..
 ```bash
 mkdir new_folder
 ```
-<결과>
+##### <결과>
 ```bash
 total 8
 drwxr-xr-x@ 4 leeaain  staff   128B Jul 28 21:51 .
@@ -163,7 +163,7 @@ drwxr-xr-x@ 2 leeaain  staff    64B Jul 28 21:51 new_folder
 ```bash
 cd new_folder
 ```
-<결과>
+##### <결과>
 ```bash
 total 0
 drwxr-xr-x@ 3 leeaain  staff    96B Jul 28 21:52 .
@@ -177,7 +177,7 @@ cd new_folder
 
 cp Dockerfile Dockerfile.backup
 ```
-<결과>
+##### <결과>
 ```bash
 total 16
 drwxr-xr-x@ 4 leeaain  staff   128B Jul 28 22:13 .
@@ -190,7 +190,7 @@ drwxr-xr-x@ 4 leeaain  staff   128B Jul 28 21:53 ..
 ```bash
 mv Dockerfile.backup test.md
 ```
-<결과>
+##### <결과>
 ```bash
 total 16
 drwxr-xr-x@ 4 leeaain  staff   128B Jul 28 22:14 .
@@ -203,7 +203,7 @@ drwxr-xr-x@ 4 leeaain  staff   128B Jul 28 21:53 ..
 ```bash
 rm test.md
 ```
-<결과>
+##### <결과>
 ```bash
 total 8
 drwxr-xr-x@ 3 leeaain  staff    96B Jul 28 22:15 .
@@ -215,7 +215,7 @@ drwxr-xr-x@ 4 leeaain  staff   128B Jul 28 21:53 ..
 ```bash
 touch empty.md
 ```
-<결과>
+##### <결과>
 ```bash
 total 8
 drwxr-xr-x@ 4 leeaain  staff   128B Jul 28 22:15 .
@@ -228,7 +228,7 @@ drwxr-xr-x@ 4 leeaain  staff   128B Jul 28 21:53 ..
 ```bash
 cat empty.md
 ```
-<결과>
+##### <결과>
 ```bash
 
 ```
@@ -248,7 +248,7 @@ drwxr-xr-x@  3 leeaain  staff    96B Jul 28 12:45 ..
 ```bash
 chmod 777 empty.md
 ```
-결과
+##### <결과>
 ```bash
 ls -al
 
@@ -262,7 +262,7 @@ drwxr-xr-x@  3 leeaain  staff    96B Jul 28 12:45 ..
 ```bash
 docker --version
 ```
-<결과>
+##### <결과>
 ```bash
 Docker version 29.4.0, build 9d7ad9f
 ```
@@ -384,7 +384,7 @@ Server:
 ```bash
 docker images
 ```
-<결과>
+##### <결과>
 ```bash
                                                                                                  i Info →   U  In Use
 IMAGE          ID             DISK USAGE   CONTENT SIZE   EXTRA
@@ -395,7 +395,7 @@ nginx:latest   5a88c9c45479        259MB         64.3MB    U
 ```bash
 docker ps -a
 ```
-<결과>
+##### <결과>
 ```bash
 CONTAINER ID   IMAGE     COMMAND                  CREATED        STATUS        PORTS                                     NAMES
 b63364d17259   nginx     "/docker-entrypoint.…"   14 hours ago   Up 14 hours   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp   web
@@ -405,7 +405,7 @@ b63364d17259   nginx     "/docker-entrypoint.…"   14 hours ago   Up 14 hours  
 ```bash
 docker logs b63364d17259
 ```
-<결과>
+##### <결과>
 ```bash
 /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
 /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
@@ -440,7 +440,7 @@ docker logs b63364d17259
 ```bash
 docker stats
 ```
-<결과>
+##### <결과>
 ```bash
 CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT    MEM %     NET I/O           BLOCK I/O         PIDS
 b63364d17259   web       0.00%     7.73MiB / 7.653GiB   0.10%     13.1kB / 5.18kB   81.9kB / 12.3kB   9
@@ -450,7 +450,7 @@ b63364d17259   web       0.00%     7.73MiB / 7.653GiB   0.10%     13.1kB / 5.18k
 ```bash
 docker stats
 ```
-<결과>
+##### <결과>
 ```bash
 CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT     MEM %     NET I/O         BLOCK I/O    PIDS
 7c7d0f6dab9f   api       0.82%     36.98MiB / 7.653GiB   0.47%     1.17kB / 126B   0B / 8.2MB   1
@@ -514,11 +514,13 @@ DRIVER    VOLUME NAME
 local     nginx-data
 ```
 
+
 ### 2. 컨테이너 연결
 기존에 만든 컨테이너와 생성한 볼륨을 연결해서 실행.
 ```bash
 docker run -d --name alpine -p 8081:80 -v nginx-data:/usr/share/nginx/html alp
 ```
+
 
 ### 3. 검증
 컨테이너 내부에서 index.html 변경
@@ -551,11 +553,12 @@ git config --global user.name "leeaain2025"
 git config --global user.mail "leeaain2025@gmail.com"
 git config --global init.defaultBranch main
 ```
-<결과>
+##### <결과>
 ```bash
 git config --list
 ```
 ![스크린샷]screenshot_06.png
+
 
 
 
@@ -585,7 +588,7 @@ docker compose up -d
 ```bash
 docker compose ps
 ```
-<결과>
+##### <결과>
 ```bash
 NAME        IMAGE          COMMAND                  SERVICE   CREATED          STATUS          PORTS
 nginx-web   nginx:alpine   "/docker-entrypoint.…"   web       12 seconds ago   Up 11 seconds   0.0.0.0:8081->80/tcp, [::]:8081->80/tcp
@@ -639,7 +642,7 @@ docker compose up -d --build
 ```bash
 docker compose ps
 ```
-<결과>
+##### <결과>
 ```bash
 NAME         IMAGE                COMMAND                  SERVICE   CREATED         STATUS                   PORTS
 try2-db-1    postgres:17-alpine   "docker-entrypoint.s…"   db        5 minutes ago   Up 5 minutes (healthy)   5432/tcp
@@ -650,7 +653,7 @@ try2-web-1   try2-web             "uvicorn main:app --…"   web       5 minutes
 ```bash
 docker compose exec web getent hosts db
 ```
-<결과>
+##### <결과>
 ```bash
 172.20.0.2    db
 ```
@@ -663,7 +666,7 @@ docker compose exec web /bin/sh
 root@500cf7acbcd5:/app# getent hosts db
 ```
 
-<결과>
+##### <결과>
 ```bash
 172.18.0.2      db
 ```
@@ -692,7 +695,7 @@ docker compose exec db /bin/sh
 / # psql -U appuser -d appdb
 SELECT * FROM messages;
 ```
-<결과>
+##### <결과>
 ```bash
  id |           content           
 ----+-----------------------------
