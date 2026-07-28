@@ -6,7 +6,8 @@
 - zsh
 - Docker: 29.4.0
 - git: 2.50.1
-
+- 사용 포트: 8000, 8080, 8081 등
+  
 ## 2. 수행 항목 체크리스트
 [x] 터미널
 [x] 권한
@@ -18,107 +19,175 @@
 [x] github
 
 ## 3. 검증 방법, 결과 위치 링크
+### 3.1 디렉토리 구조와 역할
+```text
+week_1/
+├── README.md              # 과제 수행 전체 기록 (터미널/권한/Docker/Compose/Git 로그, 트러블슈팅)
+├── screenshot_*.png       # 증거 스크린샷
+│
+├── try1/                  # 메인 과제
+│
+└── try2/                   # 보너스 과제 (FastAPI + Compose 실습)
+```
+
+
+
+
 
 
 ## 4. 트러블슈팅
-### 문제 1
+### 문제 1: 8080 포트 충돌
+#### 재현 체크리스트
+1. try1 폴더에서 시작.
+2. 이미지 빌드
+```bash
+docker build -t myserver .
+```
+3. 호스트의 8080 포트를 컨테이너의 80포트에 연결
+```bash
+docker run -d --name api -p 8080:80 myserver
+```
+4. 포트 충돌 재현을 위해 다른 컨테이너도 동일한 호스트 포트 8080에 연결
+```bash
+docker run -d --name web -p 8080:80 nginx
+```
+#### 증상
   : docker run 중에 port가 이미 점유중이라는 메시지
 ```bash
-docker run -d -p 8080:8000 --name api myserver
-5d7eab0a3da228f2a440fe3505a42506b0acdaf7f201b3e2058d2519d5bcde00
-
 What's next:
     Debug this container error with Gordon → docker ai "help me fix this container error"
 docker: Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint api (9b0948bd9052b15b02cb4fdecbcd1a1da108818be8ff6f7668d9a6c2bb5d5af8): Bind for 0.0.0.0:8080 failed: port is already allocated
 ```
 
-- 원인 가설  
-  : 앞서 실습에서 docker run을 실행해서 이미 port가 열려 있었던 것이 원인일 것이다.
-- 확인
+#### 원인 가설  
+  : 앞서 실습에서 docker run을 실행해서 이미 port가 열려 있었을 것.
+
+#### 확인
+docker에 존재하는 모든 컨테이너 확인(실행 여부 관계없음)
 ```bash
 docker ps -a
 ```
 ```bash
 CONTAINER ID   IMAGE      COMMAND                  CREATED              STATUS        PORTS                                     NAMES
-5d7eab0a3da2   myserver   "uvicorn main:app --…"   About a minute ago   Created                                                 api
+5d7eab0a3da2   myserver   "/docker-entrypoint.…"   About a minute ago   Created                                                 api
 b63364d17259   nginx      "/docker-entrypoint.…"   14 hours ago         Up 14 hours   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp   web
 ```
-역시 web이라는 컨테이너가 14시간 전에 run되어 8080 port를 점유중이다.
-- 해결/대안  
-해당 docker process를 stop시켰다. 이후 문제없이 docker run을 계속 진행할 수 있었다.
+-> 역시 web이라는 컨테이너가 14시간 전에 run되어 8080 port를 점유중이다.
+
+#### 해결/대안  
+해당 docker process를 stop시켰다. 그럼 PORT번호를 물고 있던게 해제된다.
 ```bash
 docker stop web
-
 docker ps -a
 ```
-##### <결과> 
-PORTS가 비어있는 것을 볼 수 있다.
 ```bash
-CONTAINER ID   IMAGE      COMMAND                  CREATED         STATUS                      PORTS     NAMES
-5d7eab0a3da2   myserver   "uvicorn main:app --…"   3 minutes ago   Created                               api
+CONTAINER ID   IMAGE      COMMAND                  CREATED          STATUS                      PORTS     NAMES
+5d7eab0a3da2   myserver   "/docker-entrypoint.…"   2 minutes ago    Created                               api
+b63364d17259   nginx      "/docker-entrypoint.…"   14 hours ago     Exited (0) 33 seconds ago             web
 ```
+
+
 ---
 ### 문제2  
   : 위 문제를 해결하고 다시 docker run을 시도하는데 해당 이름의 컨테이너가 이미 만들어져있다는 에러 발생
-- 원인/가설  
-  가설: 앞에서 실행했던 docker run이 port 문제로 컨테이너는 생성되었지만 실행은 안된 상태일 것이다.  
-        만들어져있다면 실행만 다시 하면 된다.
-  추가로 알아본 것: 컨테이너 설정과 파일 시스템은 만들어졌지만 uvicorn 프로세스는 실행되지 않았다.
-- 확인
-docker에 존재하는 모든 컨테이너 확인(실행 여부 관계없음)
+#### 증상
+```bash
+What's next:
+    Debug this container error with Gordon → docker ai "help me fix this container error"
+docker: Error response from daemon: Conflict. The container name "/api" is already in use by container "0f5c3538f51a2f888edf91f35ea0439899a81356e21a2ba64627386e461218a1". You have to remove (or rename) that container to be able to reuse that name.
+```
+
+#### 원인/가설  
+가설: 앞에서 실행했던 docker run이 port 문제로 컨테이너는 생성되었지만 실행은 안된 상태일 것이다.  
+	만들어져있다면 실행만 다시 하면 된다.
+  	추가로 알아본 것: 컨테이너 설정과 파일 시스템은 만들어졌지만 uvicorn 프로세스는 실행되지 않았다.
+	
+#### 확인
 ```bash
 docker ps -a
 ```
-##### <결과>
 ```bash
-CONTAINER ID   IMAGE      COMMAND                  CREATED          STATUS                     PORTS     NAMES
-5d7eab0a3da2   myserver   "uvicorn main:app --…"   49 minutes ago   Created                              api
+CONTAINER ID   IMAGE      COMMAND                  CREATED          STATUS                      PORTS     NAMES
+5d7eab0a3da2   myserver   "/docker-entrypoint.…"   2 minutes ago    Created                               api
+b63364d17259   nginx      "/docker-entrypoint.…"   14 hours ago     Exited (0) 33 seconds ago             web
 ```
 
 docker가 실행중인 컨테이너만 확인
 ```bash
 docker ps
 ```
-##### <결과>
-```bash
-CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
-```
-해당 컨테이너가 실행중이 아님을 확인할 수 있다.
+실행중인 컨테이너가 없다.
 
+#### 해결/대안
 재실행 시도
 ```bash
 docker start api
-
-docker ps -a
 ```
+
 ##### <결과>
 ```bash
-CONTAINER ID   IMAGE      COMMAND                  CREATED          STATUS                      PORTS     NAMES
-5d7eab0a3da2   myserver   "uvicorn main:app --…"   52 minutes ago   Exited (3) 5 seconds ago              api
+docker ps -a
 ```
+```bash
+CONTAINER ID   IMAGE      COMMAND                  CREATED          STATUS          PORTS                                     NAMES
+5d7eab0a3da2   myserver   "uvicorn main:app --…"   52 minutes ago   Up 3 seconds    0.0.0.0:8080->80/tcp, [::]:8080->80/tcp   api
+```
+
+---
+### 문제3
+
+#### 재현 체크리스트
+1. try2 폴더로 진입
+2. docker 이미지 빌드
+```bash
+docker build -t fastapi-uv .
+```
+3. 컨테이너 생성과 실행
+```bash
+docker run -d --name app -p 8080:80 fastapi-uv
+```
+아무것도 뜨지 않아야 함.
+
+#### 증상
+docker 이미지를 빌드 후 컨테이너 생성 & 실행했으나 컨테이너가 돌아가지 않는 상황.
+
+```bash
+docker ps
+```
+아무것도 뜨지 않음.
+
+```bash
+docker ps -a
+```
+```bash
+CONTAINER ID   IMAGE        COMMAND                  CREATED              STATUS                          PORTS     NAMES
+86407a382df9   fastapi-uv   "sh -c 'exec uvicorn…"   About a minute ago   Exited (3) About a minute ago             app
+```
+
+#### 원인/가설
 (3)번 종료 코드로 종료된 것을 알 수 있다.  종료 코드는 프로세스가 운영체제에 반환하는 숫자로 프로그램마다 의미가 다르기 때문에 여기서는 이 정보로 확인하기보다 docker log로 원인을 파악해보는 것이 나을 것 같다고 판단.
 docker의 로그를 확인해본다.
 ```bash
-docker logs api
+docker logs app
 ```
-##### <결과>
 ```bash
 ERROR:    Error loading ASGI app. Could not import module "main".
 ```
-- 해결/대안
+
+#### 해결/대안
 main.py 파일을 하위 폴더 안에 넣어두어서 docker가 찾지 못해서 발생한 문제였다. 
 `COPY . .` 를 실행해도 main.py파일이 없어서 복사가 안되었고 uvicorn이 실행되는 위치에서 main.py를 찾지 못한 것.  
 main.py 파일을 프로젝트 루트 폴더로 옮겨오고 이미지를 다시 빌드했다. 그리고 기존 컨테이너는 삭제하고 다시 실행.
 ```bash
-docker build -t myserver .
-docker rm -f api
-docker run -d -p 8080:8000 --name api myserver
+docker build -t fastapi-uv .
+docker rm -f app
+docker run -d -p 8080:8000 --name app fastapi-uv
 docker ps
 ```
 ##### <결과>
 ```bash
-CONTAINER ID   IMAGE      COMMAND                  CREATED         STATUS         PORTS                                         NAMES
-baea1e5578e6   myserver   "uvicorn main:app --…"   7 seconds ago   Up 6 seconds   0.0.0.0:8080->8000/tcp, [::]:8080->8000/tcp   api
+CONTAINER ID   IMAGE        COMMAND                  CREATED          STATUS          PORTS                                         NAMES
+0fb05498c2d1   fastapi-uv   "sh -c 'exec uvicorn…"   16 seconds ago   Up 15 seconds   0.0.0.0:8080->8000/tcp, [::]:8080->8000/tcp   app
 ```
 PORTS도 잘 매핑된 채 서비스가 잘 시작된 것을 볼 수 있다.
 
@@ -148,7 +217,7 @@ drwxr-xr-x@ 3 leeaain  staff   96 Jul 28 12:45 ..
 
 ### 생성
 ```bash
-mkdir new_folder
+mkdir try1
 ```
 ##### <결과>
 ```bash
@@ -156,24 +225,24 @@ total 8
 drwxr-xr-x@ 4 leeaain  staff   128B Jul 28 21:51 .
 drwxr-xr-x@ 3 leeaain  staff    96B Jul 28 12:45 ..
 -rw-r--r--@ 1 leeaain  staff   229B Jul 28 13:13 Dockerfile
-drwxr-xr-x@ 2 leeaain  staff    64B Jul 28 21:51 new_folder
+drwxr-xr-x@ 2 leeaain  staff    64B Jul 28 21:51 try1
 ```
 
 ### 이동
 ```bash
-cd new_folder
+cd try1
 ```
 ##### <결과>
 ```bash
 total 0
 drwxr-xr-x@ 3 leeaain  staff    96B Jul 28 21:52 .
 drwxr-xr-x@ 3 leeaain  staff    96B Jul 28 12:45 ..
-drwxr-xr-x@ 3 leeaain  staff    96B Jul 28 21:52 new_folder
+drwxr-xr-x@ 3 leeaain  staff    96B Jul 28 21:52 try1
 ```
 
 ### 복사
 ```bash
-cd new_folder
+cd try1
 
 cp Dockerfile Dockerfile.backup
 ```
@@ -235,6 +304,29 @@ cat empty.md
 
 
 # 3. 권한 실습 및 증거 기록
+### 이론
+`rwx` 비트 
+- `r`: 읽기. 숫자 4. 파일 내용 읽기 가능한 권한. 파일 이름과 목록 조회도 해당.
+- `w`: 쓰기. 숫자 2. 파일 내용 쓰기 가능한 권한. 파일 생성과 삭제, rename도 여기에 해당.
+- `x`: 실행. 숫자 1. 파일을 프로그램으로 실행 가능한 권한. 디렉토리에 진입하고 내부 항목에 접근하는 것도 여기 해당.
+
+권한값을 더해서 한자리 숫자로 표현하며, 소유자/그룹/기타사용자의 3자리로 최종적으로 표현된다.  
+
+<정리표>
+| 권한    | 문자 표기       | 의미                         | 일반적인 사용 사례              |
+| ----- | ----------- | -------------------------- | ----------------------- |
+| `755` | `rwxr-xr-x` | 소유자는 읽기·쓰기·실행, 나머지는 읽기·실행  | 디렉터리, 공개 실행 파일·스크립트     |
+| `644` | `rw-r--r--` | 소유자는 읽기·쓰기, 나머지는 읽기        | 일반 문서, 설정 파일, HTML 파일   |
+| `700` | `rwx------` | 소유자만 모든 권한 보유              | 개인 디렉터리, 비공개 실행 스크립트    |
+| `600` | `rw-------` | 소유자만 읽기·쓰기                 | SSH 개인 키, 비밀번호·토큰 파일    |
+| `775` | `rwxrwxr-x` | 소유자와 그룹은 모든 권한, 나머지는 읽기·실행 | 그룹 공동 작업 디렉터리           |
+| `664` | `rw-rw-r--` | 소유자와 그룹은 읽기·쓰기, 나머지는 읽기    | 그룹 공동 편집 파일             |
+| `777` | `rwxrwxrwx` | 모든 사용자가 읽기·쓰기·실행           | 보안 위험이 커서 일반적으로 사용하지 않음 |
+
+디렉토리를 읽고 이용하려면 `r-x`가 함께 필요함.
+
+
+### 실습
 권한 변경 전
 ```bash
 ls -al
@@ -246,16 +338,22 @@ drwxr-xr-x@  3 leeaain  staff    96B Jul 28 12:45 ..
 
 권한 변경 실행
 ```bash
-chmod 777 empty.md
+chmod 600 empty.md
 ```
+
 ##### <결과>
 ```bash
 ls -al
 
-drwxr-xr-x@  4 leeaain  staff   128B Jul 29 01:34 .
-drwxr-xr-x@  3 leeaain  staff    96B Jul 28 12:45 ..
--rwxrwxrwx@  1 leeaain  staff     0B Jul 28 22:15 empty.md
+-rw-------@ 1 leeaain  staff     0B Jul 29 01:54 README.md
 ```
+위 권한에 대한 설명
+- 파일 소유자만 읽고 수정할 수 있으며, 나머지 사용자는 아무 권한도 없음.  
+- 실행파일에는 적합하지 않고 소유자 외에 공개하고 싶지 않은 파일에 적합한 설정.
+
+
+
+
 
 # 4. Docker 설치 및 기본 점검
 ### Docker 버전 확인
@@ -268,6 +366,11 @@ Docker version 29.4.0, build 9d7ad9f
 ```
 
 ### Docker 데몬 동작 여부 확인
+```bash
+docker info
+```
+
+##### <결과>
 ```bash
 Client:
  Version:    29.4.0
@@ -437,15 +540,6 @@ docker logs b63364d17259
 192.168.65.1 - - [27/Jul/2026:23:59:16 +0000] "GET / HTTP/1.1" 200 896 "-" "curl/8.7.1" "-"
 ```
 
-```bash
-docker stats
-```
-##### <결과>
-```bash
-CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT    MEM %     NET I/O           BLOCK I/O         PIDS
-b63364d17259   web       0.00%     7.73MiB / 7.653GiB   0.10%     13.1kB / 5.18kB   81.9kB / 12.3kB   9
-```
-
 ### 운영: 리소스 확인
 ```bash
 docker stats
@@ -534,12 +628,14 @@ drwxr-xr-x  11 root root 4096 Jun 10 02:16 var
 	`exit`를 통해 빠져나오면 해당 shell만 종료되고 기존 메인 프로세스는 유지된다.
 - `docker attach`는 새로운 shell을 만들지 않고 컨테이너의 기존 주 프로세스인 bash에 직접 연결한다. 
 	`exit`를 통해 빠져나오면 기존 메인 프로세스까지 함께 종료된다.
-```bash
-
-```
+### 이미지와 컨테이너의 차이
+- 이미지: 설계도. 소스코드, 라이브러리, 설정 및 기본 실행 명령을 읽기 전용 레이어로 묶어놓은 불변 템플릿.
+- 컨테이너: 이미지를 기반으로 생성되고 실행되는 인스턴스.
 
 
 # 7. 기존 Dockerfile 기반 커스텀 이미지 제작
+1. try1 폴더로 진입
+2. 
 Dockerfile
 ```docker
 FROM nginx:alpine
@@ -557,13 +653,13 @@ index.html
 
 ```bash
 docker build -t alpine .
-docker run -d --name alpine -p 8081:80 alp
-docker ps -a
+docker run -d --name week1-nginx-container -p 8081:80 myserver
+docker ps
 ```
 <결과>
 ```bash
-CONTAINER ID   IMAGE      COMMAND                  CREATED          STATUS          PORTS                                         NAMES
-f032f79ef4bb   alp        "/docker-entrypoint.…"   3 seconds ago    Up 3 seconds    0.0.0.0:8081->80/tcp, [::]:8081->80/tcp       alpine
+CONTAINER ID   IMAGE      COMMAND                  CREATED              STATUS              PORTS                                     NAMES
+bd5235b01cfc   myserver   "/docker-entrypoint.…"   About a minute ago   Up About a minute   0.0.0.0:8081->80/tcp, [::]:8081->80/tcp   week1-nginx-container
 ```
 
 ### 어떤 기존 베이스를 선택했는지
@@ -573,62 +669,222 @@ Alpine Linux 위에 NGINX 웹 서버가 설치된 Docker 이미지.
 
 ### 적용한 커스텀 포인트 목적
 - index.html 커스텀  
-: NGINX 기본 페이지 대신 표
+: NGINX 기본 페이지 대신 표시될 html 내용.
 
 
 
 # 8. 포트 매핑 및 접속 증거
+```bash
+curl http://localhost:8081
+```
+```bash
+<h1>My Custom NGINX Server</h1>
+<p>Docker custom image is running.</p>
+```
 ![스크린샷]screenshot_00.png
 
 
 
 # 9. Docker 볼륨 영속성 검증
+
+<준비>  
+기존에 동작중인 컨테이너가 있다면 제거
+```bash
+docker rm -f week1-nginx-container
+```
+
 ### 1. 볼륨 생성
 ```bash
 docker volume create nginx-data
-```
-<결과>
-```bash
 docker volume ls
-
+```
+```bash
 DRIVER    VOLUME NAME
 local     nginx-data
 ```
 
 
 ### 2. 컨테이너 연결
-기존에 만든 컨테이너와 생성한 볼륨을 연결해서 실행.
+기존에 빌드해둔 이미지로 컨테이너를 생성하면서 볼륨도 연결해서 실행.
 ```bash
-docker run -d --name alpine -p 8081:80 -v nginx-data:/usr/share/nginx/html alp
+docker run -d --name week1-nginx-container -p 8082:80 -v nginx-data:/usr/share/nginx/html myserver
 ```
 
 
-### 3. 검증
-컨테이너 내부에서 index.html 변경
+### 3. 컨테이너와 볼륨 연결 검증
+#### 1. 컨테이너 내부에서 index.html 변경
 ```bash
-docker exec -it alpine /bin/sh
-
+docker exec -it week1-nginx-container /bin/sh
 cd /usr/share/nginx/html
 vi index.html
 ```
-![스크린샷]screenshot_04.png
 
-컨테이너 삭제 전에 확인  
-![스크린샷]screenshot_05.png
-
-기존 컨테이너 삭제 후 동일 볼륨으로 새 컨테이너 생성.
-```bash
-docker rm -f alpine
-
-docker run -d --name alpine -p 8082:80 -v nginx-data:/usr/share/nginx/html alp
+<변경 전>
+```html<h1>My Custom NGINX Server</h1>
+<p>Docker custom image is running.</p>
 ```
 
-새 컨테이너에서도 앞에서의 볼륨에 반영한 내용 동일하게 확인되는지 체크.  
+<변경 후>
+```html
+<h1>My Custom NGINX Server</h1>
+<p>Docker custom image is running.</p>
+
+<span>Edited in volume!</span>
+```
+
+#### 2. 변경됐는지 확인  
+```bash
+curl http://localhost:8082
+```
+```html
+<h1>My Custom NGINX Server</h1>
+<p>Docker custom image is running.</p>
+
+<span>Edited in volume!</span>
+```
+
+![스크린샷]screenshot_04.png
+![스크린샷]screenshot_05.png
+
+#### 3. 확인
+0. 기존 컨테이너 삭제
+```bash
+docker rm -f week1-nginx-container
+```
+
+1. 일반적인 방법으로 새 컨테이너 생성
+```bash
+docker run -d --name test -p 8000:80 myserver
+docker exec -it test /bin/sh
+cd usr/share/nginx/html
+cat index.html
+```
+아래처럼 조금전에 변경한 내용이 날아가고 없어야 한다.
+```html
+<h1>My Custom NGINX Server</h1>
+<p>Docker custom image is running.</p>
+```
+
+2. 동일 볼륨으로 새 컨테이너 생성.
+```bash
+docker run -d --name week1-nginx-container -p 8082:80 -v nginx-data:/usr/share/nginx/html myserver
+cd usr/share/nginx/html
+cat index.html
+```
+아래처럼 수정한 내용이 보여야 한다.
+```html
+<h1>My Custom NGINX Server</h1>
+<p>Docker custom image is running.</p>
+
+<span>Edited in volume!</span>
+```
 ![스크린샷]screenshot_06.png
 
 
+### 4. 볼륨 백업하기
+먼저 데이터 변경을 막기 위해 연결된 컨테이너를 중지
+```bash
+docker stop week1-nginx-container
+```
+
+볼륨을 백업한다.  
+현재 폴더에 nginx-data-backup.tar.gz 파일을 생성.
+이 때 임시 Alpine 컨테이너를 이용하여 압축 파일로 백업한다.
+```bash
+docker run --rm \
+  -v nginx-data:/data:ro \
+  -v "$(pwd):/backup" \
+  alpine \
+  tar czf /backup/nginx-data-backup.tar.gz -C /data .
+```
+Docker volume은 독립적으로 명령어를 실행할 수 있는 프로그램이 아니라 단순한 저장 공간으로,  
+파일 목록 조회나 압축등의 기능이 없다.  
+그래서 볼륨을 임시 컨테이너에 연결하고 컨테이너 안의 `tar` 명령을 이용한다.  
+Alpine은 이미지 크기가 작고 `tar`같은 기본 도구가 포함되어 있어 임시 컨테이너로 사용하기에 적합하다. Ubuntu같은 이미지도 good.
+
+
+### 5. 볼륨 복원
+안전한 복원을 위해 새 볼륨을 생성한다.  
+기존 데이터를 건드리지 않고 백업 파일이 제대로 복원되는지 검증하기 위해서다.
+기존 볼륨에 바로 복원하면 기존 파일과 백업 파일이 섞이며 같은 이름의 파일이 덮어씌워지는 등 데이터가 망가질 위험이 있다.
+```bash
+docker volume create nginx-data-restored
+```
+
+기존에 백업해둔 내용으로부터 복원한다.
+```bash
+docker run --rm \
+  -v nginx-data-restored:/data \
+  -v "$(pwd):/backup:ro" \
+  alpine \
+  tar xzf /backup/nginx-data-backup.tar.gz -C /data
+```
+
+잘 복원됐는지 확인
+```bash
+docker run --rm \
+  -v nginx-data-restored:/data \
+  alpine \
+  ls -la /data
+```
+```bash
+docker run --rm \
+  -v nginx-data-restored:/data \
+  alpine \
+  cat /data/index.html
+```
+
+### 6. 검증을 위해 index.html 파일 변경
+중지해뒀던 컨테이너 재시작 후 내부 진입
+```bash
+docker start week1-nginx-container
+docker exec -it week1-nginx-container /bin/sh
+cd usr/share/nginx/html
+vi index.html
+```
+
+<변경 전>
+```html
+<h1>My Custom NGINX Server</h1>
+<p>Docker custom image is running.</p>
+
+<span>Edited in volume!</span>
+```
+<변경 후>
+```html
+<h1>My Custom NGINX Server</h1>
+```
+
+### 7. 
+복원한 볼륨으로 새 컨테이너 실행.  
+기존의 컨테이너와 겹치지 않게 컨테이너 이름과 포트번호를 8083으로 수정한다.
+```bash
+docker run -d --name week1-nginx-restored -p 8083:80 -v nginx-data-restored:/usr/share/nginx/html myserver
+```
+index.html 확인
+```bash
+docker exec week1-nginx-restored \
+  cat /usr/share/nginx/html/index.html
+
+curl http://localhost:8083
+```
+
+복원된 컨테이너에서는 원본 파일을 수정하기 전, 즉 백업 당시의 내용이 출력되어야 한다.
+```html
+<h1>My Custom NGINX Server</h1>
+<p>Docker custom image is running.</p>
+
+<span>Edited in volume!</span>
+```
+
+
+
+
 ## 10. Git 설정 및 GitHub 연동
-- Git 사용자 정보/기본 브랜치 설정
+
+git 원격 repo 주소: https://github.com/leeaain2025/codyssey
+
+### Git 사용자 정보/기본 브랜치 설정
 ```bash
 git config --global user.name "leeaain2025"
 git config --global user.mail "leeaain2025@gmail.com"
@@ -639,6 +895,20 @@ git config --global init.defaultBranch main
 git config --list
 ```
 ![스크린샷]screenshot_06.png
+
+### git push 이력
+```bash
+git log --oneline origin/main
+```
+##### <결과>
+```bash
+061c923 (HEAD -> main, origin/main) modified README.md
+6a9278d modified README.md
+58b0006 modified README.md
+de56c11 complete README.md
+7260497 submit
+6c8b58d Initial commit
+```
 
 
 
@@ -892,105 +1162,12 @@ CONTAINER ID   IMAGE                COMMAND                  CREATED          ST
 
 
 
+# 추가
+## 1. 포트 노출 이유
+- 포트 노출 이유(네임스페이스·보안 관점)
+  : 환경변수로 입력으로 달라지는 포트 번호를 보이기 위함이며 보안상 리스크를 인지하고 있음. 
 
 
-# 웹 서버 컨테이너 만들어보기
-웹 서버 컨테이너
-### 웹 서버 소스코드 (app/)
-```python
-from fastapi import FastAPI
-
-app = FastAPI()
 
 
-@app.get("/")
-async def root():
-    return {"message": "Hello from FastAPI!"}
-```
-
-### Dockerfile
-```Docker
-FROM python:3.12-slim
-
-COPY --from=ghcr.io/astral-sh/uv:0.7.13 /uv /bin/uv
-
-ENV PYTHONUNBUFFERED=1 \
-    PATH="/app/.venv/bin:$PATH"
-
-WORKDIR /app
-
-COPY pyproject.toml uv.lock ./
-RUN uv sync --locked --no-dev
-
-COPY . .
-
-EXPOSE 8000
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-### 빌드/실행 명령 및 결과
-```bash
-docker build -t myserver .
-```
-<결과>
-```bash
-[+] Building 1.5s (15/15) FINISHED                                                                                      docker:desktop-linux
- => [internal] load build definition from Dockerfile                                                                                    0.0s
- => => transferring dockerfile: 385B                                                                                                    0.0s
- => [internal] load metadata for docker.io/library/python:3.12-slim                                                                     1.4s
- => [internal] load metadata for ghcr.io/astral-sh/uv:0.7.13                                                                            1.1s
- => [auth] library/python:pull token for registry-1.docker.io                                                                           0.0s
- => [internal] load .dockerignore                                                                                                       0.0s
- => => transferring context: 75B                                                                                                        0.0s
- => FROM ghcr.io/astral-sh/uv:0.7.13@sha256:6c1e19020ec221986a210027040044a5df8de762eb36d5240e382bc41d7a9043                            0.0s
- => => resolve ghcr.io/astral-sh/uv:0.7.13@sha256:6c1e19020ec221986a210027040044a5df8de762eb36d5240e382bc41d7a9043                      0.0s
- => [stage-0 1/7] FROM docker.io/library/python:3.12-slim@sha256:57cd7c3a7a273101a6485ba99423ee568157882804b1124b4dd04266317710de       0.0s
- => => resolve docker.io/library/python:3.12-slim@sha256:57cd7c3a7a273101a6485ba99423ee568157882804b1124b4dd04266317710de               0.0s
- => [internal] load build context                                                                                                       0.0s
- => => transferring context: 781B                                                                                                       0.0s
- => CACHED [stage-0 2/7] COPY --from=ghcr.io/astral-sh/uv:0.7.13 /uv /bin/uv                                                            0.0s
- => CACHED [stage-0 3/7] WORKDIR /app                                                                                                   0.0s
- => CACHED [stage-0 4/7] COPY pyproject.toml uv.lock ./                                                                                 0.0s
- => CACHED [stage-0 5/7] RUN uv sync --locked --no-install-project                                                                      0.0s
- => CACHED [stage-0 6/7] COPY . .                                                                                                       0.0s
- => CACHED [stage-0 7/7] RUN uv sync --locked                                                                                           0.0s
- => exporting to image                                                                                                                  0.1s
- => => exporting layers                                                                                                                 0.0s
- => => exporting manifest sha256:6d8ab8e25f2fc7cc25eade6fb519de52d1be6ced9ccddf62fb13192768b04e6a                                       0.0s
- => => exporting config sha256:00e2ed44097e50ee1dc5c25b25783a91f394a78b5a04c76d413c44379dbaa582                                         0.0s
- => => exporting attestation manifest sha256:c2eaa896011ffff9e34c0cfb8530072cdf88465bad04510cfe3c9ea3c39085b4                           0.0s
- => => exporting manifest list sha256:bbd2ecc35416517027a925ae6535c2aff271c6f82dee4aa1136617ceb316c145                                  0.0s
- => => naming to docker.io/library/myserver:latest                                                                                      0.0s
- => => unpacking to docker.io/library/myserver:latest   
-```
-
-```bash
-docker run -d -p 8080:8000 --name api myserver
-```
-<결과>
-```bash
-baea1e5578e6ce6436a02fde4a14ea63a420babb3fea4f2fdfa78d2424406225
-```
-
-### 포트 매핑 접속 증거
-![스크린샷]./screenshot.png
-
-### 바인드 마운트 반영 + 볼륨 영속성 증거
-- 바인드 마운트  
-message.txt 파일을 하나 생성하고 컨테이너 내부에서 파일내용을 수정해봄.
-
-바인드 마운트 연결
-```bash
-docker run --rm -p 8080:8000 -v "./message.txt:/app/message.txt" -w /app myserver
-```
-컨테이너 내부에서 파일 내용 수정
-```bash
-docker exec -it api /bin/bash
-```
-```bash
-vi message.txt
-```
-
-< 호스트 변경 전/후 비교>
-![스크린샷]./screenshot_02.png
 
