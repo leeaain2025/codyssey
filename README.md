@@ -1159,14 +1159,37 @@ EXPOSE 8000
 
 CMD ["sh", "-c", "exec uvicorn main:app --host 0.0.0.0 --port \"$SERVER_PORT\""]
 ```
-
-- 빌드 및 컨테이너 생성과 실행  
-9000포트로 환경변수를 덮어써서 실행
+위 명세대로 이미지를 빌드하면 ENV에 기재된 환경변수들이 기본값으로 저장된다.
 ```bash
 docker build -t fastapi-uv .
+```
+
+- 빌드 및 컨테이너 생성과 실행  
+`docker run`은 컨테이너를 생성하고 실행한다.  
+
+이 때, Dockerfile의 ENV를 docker run에서 덮어쓸 수 있다.
+아래 구문은 컨테이너 내부의 `PORT` 환경변수 값을 덮어쓴다.
+```bash
+docker run --rm -e SERVER_PORT=9000 fastapi-uv
+```
+
+아래 구문은 호스트 포트와 컨테이너 포트를 연결해서 실행하는 것으로, 환경변수를 변경하지는 않는다.  
+
+```bash
 docker run --rm -p 9000:9000 fastapi-uv
 ```
-포트 확인
+-p 옵션은 컨테이너의 네트워크를 외부에 어떻게 노출할지 정하는 것으로,  
+호스트:컨테이너포트 순서이다.  
+호스트 포트는 내 PC의 포트이고,  
+컨테이너 포트란 컨테이너 내부에서 프로그램이 실제로 listen하는 포트이다.  
+예를 들어 컨테이너 내부에서 fastapi가 실제 사용하는 포트는 8000인데  
+```bash
+docker run -p 9000:9000 fastapi-uv
+```
+이렇게 지정한다면 `-p 9000:9000` 연결은 만들어지지만 응답은 오지 않는다.
+
+
+포트 확인  
 ```bash
 docker ps
 
